@@ -11,32 +11,37 @@ data = pd.read_csv('./dataset/data_stocks.csv')
 # Drop date variable
 data = data.drop(['DATE'], 1)
 
-# Dimensions of dataset
-n = data.shape[0]
-p = data.shape[1]
-
 # Make data a np.array
 data = data.values
 
 # Training and test data
 train_start = 0
-train_end = int(np.floor(0.8*n))
+train_end = int(np.floor(0.8*data.shape[0]))
 test_start = train_end + 1
-test_end = n
+test_end = data.shape[0]
 data_train = data[np.arange(train_start, train_end), :]
 data_test = data[np.arange(test_start, test_end), :]
-
-# Scale data
-scaler = MinMaxScaler(feature_range=(-1, 1))
-scaler.fit(data_train)
-data_train = scaler.transform(data_train)
-data_test = scaler.transform(data_test)
 
 # Build X and y
 X_train = data_train[:, 1:]
 y_train = data_train[:, 0]
 X_test = data_test[:, 1:]
 y_test = data_test[:, 0]
+
+y_train = y_train.reshape(y_train.shape[0], 1)
+y_test = y_test.reshape(y_test.shape[0], 1)
+
+# Scale data
+scaler_X = MinMaxScaler(feature_range=(-1, 1))
+scaler_y = MinMaxScaler(feature_range=(0, 1))
+scaler_X.fit(data[:,1:])
+scaler_y.fit(data[:,0].reshape(data[:,0].shape[0],1))
+X_train = scaler_X.transform(X_train)
+X_test = scaler_X.transform(X_test)
+y_train = scaler_y.transform(y_train)
+y_test = scaler_y.transform(y_test)
+
+y_train = y_train.reshape(y_train.shape[0])
 
 # Number of stocks in training data
 n_stocks = X_train.shape[1]
@@ -93,7 +98,7 @@ net.run(tf.global_variables_initializer())
 
 
 # Fit neural net
-batch_size = 600
+batch_size = 256
 mse_train = []
 mse_test = []
 
@@ -125,14 +130,13 @@ for e in range(epochs):
         if np.mod(i, 50) == 0:
             # MSE train and test
             mse_train.append(net.run(mse, feed_dict={X: X_train, Y: y_train}))
-            #mse_test.append(net.run(mse, feed_dict={X: X_test, Y: y_test}))
             print('MSE Train: ', mse_train[-1])
-            #print('MSE Test: ', mse_test[-1])
             # Prediction
             pred = net.run(out, feed_dict={X: X_test})
             
+            
             plt.figure()
-            plt.plot(X_axis, y_test.T, 'r')
-            plt.plot(X_axis, pred.T, 'b')
-            plt.title('Epoch ' + str(e) + ', Batch ' + str(i * batch_size))
+            plt.plot(X_axis, scaler_y.inverse_transform(y_test), 'r')
+            plt.plot(X_axis, scaler_y.inverse_transform(pred.T), 'b')
+            plt.title('Epoch ' + str(e) + ', Batch ' + str(i))
             plt.show()
