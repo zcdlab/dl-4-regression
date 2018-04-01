@@ -1,5 +1,3 @@
-# This example is cited by https://medium.com/mlreview/a-simple-deep-learning-model-for-stock-price-prediction-using-tensorflow-30505541d877
-
 # Import
 import tensorflow as tf
 import numpy as np
@@ -95,13 +93,18 @@ net.run(tf.global_variables_initializer())
 
 
 # Fit neural net
-batch_size = 256
+batch_size = 600
 mse_train = []
 mse_test = []
 
 # Run
-epochs = 100
+epochs = 5
 X_axis = [i for i in range(y_test.shape[0])]
+
+
+print(X_train.shape)
+print(y_train.shape)
+print(len(y_train) // batch_size)
 
 for e in range(epochs):
 
@@ -122,14 +125,14 @@ for e in range(epochs):
         if np.mod(i, 50) == 0:
             # MSE train and test
             mse_train.append(net.run(mse, feed_dict={X: X_train, Y: y_train}))
-            mse_test.append(net.run(mse, feed_dict={X: X_test, Y: y_test}))
+            #mse_test.append(net.run(mse, feed_dict={X: X_test, Y: y_test}))
             print('MSE Train: ', mse_train[-1])
-            print('MSE Test: ', mse_test[-1])
+            #print('MSE Test: ', mse_test[-1])
             # Prediction
             pred = net.run(out, feed_dict={X: X_test})
             
             plt.figure()
             plt.plot(X_axis, y_test.T, 'r')
             plt.plot(X_axis, pred.T, 'b')
-            plt.title('Epoch ' + str(e) + ', Batch ' + str(i))
+            plt.title('Epoch ' + str(e) + ', Batch ' + str(i * batch_size))
             plt.show()
