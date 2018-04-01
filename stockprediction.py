@@ -14,22 +14,22 @@ data = data.drop(['DATE'], 1)
 # Make data a np.array
 data = data.values
 
-# Training and test data
+# Training and val data
 train_start = 0
 train_end = int(np.floor(0.8*data.shape[0]))
-test_start = train_end + 1
-test_end = data.shape[0]
+val_start = train_end + 1
+val_end = data.shape[0]
 data_train = data[np.arange(train_start, train_end), :]
-data_test = data[np.arange(test_start, test_end), :]
+data_val = data[np.arange(val_start, val_end), :]
 
 # Build X and y
 X_train = data_train[:, 1:]
 y_train = data_train[:, 0]
-X_test = data_test[:, 1:]
-y_test = data_test[:, 0]
+X_val = data_val[:, 1:]
+y_val = data_val[:, 0]
 
 y_train = y_train.reshape(y_train.shape[0], 1)
-y_test = y_test.reshape(y_test.shape[0], 1)
+y_val = y_val.reshape(y_val.shape[0], 1)
 
 # Scale data
 scaler_X = MinMaxScaler(feature_range=(-1, 1))
@@ -37,9 +37,9 @@ scaler_y = MinMaxScaler(feature_range=(0, 1))
 scaler_X.fit(data[:,1:])
 scaler_y.fit(data[:,0].reshape(data[:,0].shape[0],1))
 X_train = scaler_X.transform(X_train)
-X_test = scaler_X.transform(X_test)
+X_val = scaler_X.transform(X_val)
 y_train = scaler_y.transform(y_train)
-y_test = scaler_y.transform(y_test)
+y_val = scaler_y.transform(y_val)
 
 y_train = y_train.reshape(y_train.shape[0])
 
@@ -100,11 +100,11 @@ net.run(tf.global_variables_initializer())
 # Fit neural net
 batch_size = 256
 mse_train = []
-mse_test = []
+mse_val = []
 
 # Run
 epochs = 5
-X_axis = [i for i in range(y_test.shape[0])]
+X_axis = [i for i in range(y_val.shape[0])]
 
 
 print(X_train.shape)
@@ -128,15 +128,17 @@ for e in range(epochs):
 
         # Show progress
         if np.mod(i, 50) == 0:
-            # MSE train and test
+            # MSE train and val
             mse_train.append(net.run(mse, feed_dict={X: X_train, Y: y_train}))
             print('MSE Train: ', mse_train[-1])
+            mse_val.append(net.run(mse, feed_dict={X: X_val, Y: y_val.reshape((y_val.shape[0]))}))
+            print('MSE val: ', mse_val[-1])
             # Prediction
-            pred = net.run(out, feed_dict={X: X_test})
+            pred = net.run(out, feed_dict={X: X_val})
             
             
             plt.figure()
-            plt.plot(X_axis, scaler_y.inverse_transform(y_test), 'r')
+            plt.plot(X_axis, scaler_y.inverse_transform(y_val), 'r')
             plt.plot(X_axis, scaler_y.inverse_transform(pred.T), 'b')
             plt.title('Epoch ' + str(e) + ', Batch ' + str(i))
             plt.show()
